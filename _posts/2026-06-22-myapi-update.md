@@ -1,58 +1,80 @@
 ---
-title: "Adding a Frontend and Refactoring Routes in My API Project"
+title: "Converting the Frontend from Vanilla HTML to React"
 date: 2026-06-22 00:00:00 +0900
-categories: [Backend, Server]
-tags: [nodejs, express, frontend, refactoring, rest-api]
+categories: [Frontend, React]
+tags: [react, vite, react-router, javascript, spa]
 ---
 
 ## Overview
 
-Built a frontend interface for the existing REST API and refactored the backend by separating route handlers into their own module.
+Converted the frontend of the API project from plain HTML pages to a single-page application (SPA) built with **React**, **Vite**, and **React Router**. The original five static HTML files have been replaced by React components, while the backend API remains unchanged.
 
-## 1. Frontend Pages for CRUD Operations
+## 1. Tech Stack
 
-Created five HTML pages under the `frontend/` directory, each dedicated to a specific CRUD operation:
+| Tool | Version | Role |
+|------|---------|------|
+| React | 19 | UI library |
+| React Router | 7 | Client-side routing |
+| Vite | 8 | Dev server & build tool |
 
-- **index.html** — Displays a table of all users fetched from `GET /users`
-- **create.html** — A form to add a new user via `POST /users`
-- **read.html** — Look up a single user by ID via `GET /users/:id`
-- **update.html** — Load an existing user, edit their info, and submit via `PUT /users/:id`
-- **delete.html** — Delete a user by ID via `DELETE /users/:id`
+All dependencies are declared in `frontend/package.json`. Running `npm run dev` starts Vite's dev server with hot module replacement, and `npm run build` produces an optimized production bundle in `frontend/dist`.
 
-All pages share a consistent design with a navigation bar for easy switching between operations. The frontend communicates with the API using `fetch()`.
+## 2. Project Structure
 
-## 2. Serving Static Files
-
-Added `express.static` middleware in `app.js` to serve the frontend pages directly from the server:
-
-```javascript
-app.use(express.static(path.join(__dirname, 'frontend')));
+```
+frontend/
+├── src/
+│   ├── main.jsx          # Entry point — mounts <App /> inside BrowserRouter
+│   ├── App.jsx           # Top-level layout with NavLink navigation and Routes
+│   ├── App.css           # Global styles
+│   └── pages/
+│       ├── AllUsers.jsx   # GET /users — lists all users in a table
+│       ├── CreateUser.jsx # POST /users — form to create a new user
+│       ├── FindUser.jsx   # GET /users/:id — look up a user by ID
+│       ├── UpdateUser.jsx # PUT /users/:id — load then edit a user
+│       └── DeleteUser.jsx # DELETE /users/:id — delete with confirmation
+├── vite.config.js        # Vite config with API proxy
+└── package.json
 ```
 
-This means visiting the server root now loads the frontend UI instead of just returning a JSON response.
+## 3. Client-Side Routing
 
-## 3. Route Refactoring
+Previously, each CRUD operation lived in its own HTML file (`create.html`, `read.html`, etc.) and navigation required full page reloads. Now, `App.jsx` defines all routes in one place using React Router:
 
-Moved all user-related route handlers out of `app.js` and into a dedicated module at `routes/master/users.js`. The main `app.js` now simply mounts the router:
-
-```javascript
-const usersRouter = require('./routes/master/users');
-app.use('/users', usersRouter);
+```jsx
+<Routes>
+  <Route path="/" element={<AllUsers />} />
+  <Route path="/create" element={<CreateUser />} />
+  <Route path="/find" element={<FindUser />} />
+  <Route path="/update" element={<UpdateUser />} />
+  <Route path="/delete" element={<DeleteUser />} />
+</Routes>
 ```
 
-This reduced `app.js` from over 100 lines down to under 20, making the codebase much cleaner and easier to maintain as more routes are added in the future.
+Navigation between pages is instant because React Router swaps components in the browser without a server round-trip. The `<NavLink>` component automatically highlights the active route.
 
-## 4. NPM Scripts
+## 4. API Proxy with Vite
 
-Added convenience scripts to `package.json`:
+During development, the React app runs on Vite's dev server (port 5173 by default), while the Express API runs on port 3400. To avoid CORS issues, Vite proxies API requests:
 
-```json
-"start": "node app.js",
-"dev": "nodemon app.js"
+```js
+server: {
+  proxy: {
+    '/users': 'http://localhost:3400',
+  },
+},
 ```
 
-Now the server can be started with `npm start` or in development mode with `npm run dev` for automatic restarts on file changes.
+This means `fetch('/users')` in the React code is transparently forwarded to the Express backend.
+
+## 5. Component Highlights
+
+- **AllUsers** — Uses `useEffect` to fetch users on mount and displays them in a table with a loading state.
+- **CreateUser** — Controlled form inputs with `useState`; clears the form on success and shows the created user's details.
+- **FindUser** — Fetches a single user by ID and renders the result card below the form.
+- **UpdateUser** — Two-step flow: first load the user, then display an edit form pre-filled with current values.
+- **DeleteUser** — Calls `window.confirm()` before sending the DELETE request as a safeguard.
 
 ## Takeaways
 
-Separating concerns — frontend from backend logic, and route handlers from the main entry point — keeps the project organized as it grows. The frontend pages provide a user-friendly way to interact with the API without needing tools like Postman or curl.
+Moving from static HTML pages to React introduced component-based architecture, declarative routing, and state management with hooks. Vite's fast dev server and API proxy made the development experience smooth, and the SPA approach eliminated full-page reloads for a more responsive user interface.
