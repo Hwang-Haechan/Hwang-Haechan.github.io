@@ -30,7 +30,7 @@ Connected to the server via SSH from a laptop.
 Also set up VMware port forwarding to enable access from a mobile device.
 
 ```bash
-ssh hchwang@192.168.13.250
+ssh username@192.168.13.250
 ```
 
 ## 4. Node.js + Express API Server
