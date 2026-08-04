@@ -5,8 +5,6 @@ categories: [Web, Networking]
 tags: [cors, origin, bff, backend, web]
 ---
 
-# Origin, CORS, and Why Frontend/Backend Domains Are Split: A Complete Guide
-
 Anyone who's done web development has run into a CORS error at some point. This post covers what an Origin actually is, why CORS errors happen, why frontend and backend are usually split across different domains in practice, and finally the BFF pattern.
 
 ## 1. What is an Origin?
